@@ -1,13 +1,11 @@
-version: '3.8'
-
 services:
   ctfd:
     image: ctfd/ctfd:latest
-    container_name: ctfd
     ports:
       - "8000:8000"
     environment:
       - WORKERS=1
+    env_file: .env
     volumes:
       - ctfd_data:/var/lib/ctfd
     networks:
@@ -16,6 +14,11 @@ services:
       - caesar-challenge
       - image-challenge
       - http-challenge
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   caesar-challenge:
     build:
@@ -49,6 +52,11 @@ services:
     env_file: .env
     networks:
       - ctf_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   ctfd_data:

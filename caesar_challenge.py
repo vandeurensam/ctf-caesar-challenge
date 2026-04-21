@@ -4,6 +4,11 @@ Caesar Cipher CTF Challenge
 Decode the secret message to find the flag.
 """
 
+import os
+
+# Get flag from environment variable
+FLAG = os.getenv('CAESAR_FLAG', 'CTF{default_flag}')
+
 def caesar_decrypt(ciphertext, shift):
     """Decrypt Caesar cipher with given shift."""
     result = []
@@ -47,7 +52,7 @@ def main():
                 print()
                 print("=" * 50)
                 print("CORRECT!")
-                print("FLAG: CTF{c43s4r_c1ph3r_m4st3r}")
+                print(f"FLAG: {FLAG}")
                 print("=" * 50)
                 break
             else:

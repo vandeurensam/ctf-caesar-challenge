@@ -6,4 +6,6 @@ COPY caesar_challenge.py .
 
 RUN chmod +x caesar_challenge.py
 
+ENV CAESAR_FLAG=CTF{c43s4r_c1ph3r_m4st3r}
+
 ENTRYPOINT ["python3", "caesar_challenge.py"]

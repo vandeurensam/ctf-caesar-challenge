@@ -4,9 +4,17 @@ Add all CTF challenges to CTFd
 - Caesar Cipher
 - Image Metadata (EXIF)
 - HTTP Headers & Cookies
+
+Flags are read from environment variables (.env file)
 """
 
 import sys
+import os
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
 sys.path.insert(0, '/opt/CTFd')
 
 from CTFd.models import Challenges, Flags, db
@@ -15,13 +23,11 @@ from CTFd import create_app
 def add_challenges():
     """Add all challenges to CTFd"""
     
-    app = create_app()
-    
-    with app.app_context():
-        challenges = [
-            {
-                "name": "Caesar Cipher",
-                "description": """You have intercepted an encrypted message:
+    # Get flags from environment
+    challenges_data = [
+        {
+            "name": "Caesar Cipher",
+            "description": """You have intercepted an encrypted message:
 
 **Encrypted:** `Wkh txlfn eurzq ira mxpsv ryhu wkh odcb grj.`
 
@@ -35,13 +41,13 @@ docker run -it caesar-challenge
 ```
 
 Try different shift values until the message becomes readable.""",
-                "category": "Cryptography",
-                "value": 100,
-                "flag": "CTF{c43s4r_c1ph3r_m4st3r}"
-            },
-            {
-                "name": "Image Metadata",
-                "description": """You have found a suspicious image file. The image looks innocent, but there's a secret hidden in its EXIF metadata.
+            "category": "Cryptography",
+            "value": 100,
+            "flag": os.getenv('CAESAR_FLAG', 'CTF{default_caesar}')
+        },
+        {
+            "name": "Image Metadata",
+            "description": """You have found a suspicious image file. The image looks innocent, but there's a secret hidden in its EXIF metadata.
 
 **Challenge:** Extract the EXIF data and find the flag hidden in the image metadata.
 
@@ -57,13 +63,13 @@ Use the tools to inspect the image's metadata. EXIF data is stored inside image 
 - Use exiftool to extract EXIF data
 - Look at all metadata fields carefully
 - The flag is hidden in one of the metadata fields""",
-                "category": "Forensics",
-                "value": 150,
-                "flag": "CTF{3x1f_m3t4d4t4_5ecr3t}"
-            },
-            {
-                "name": "HTTP Headers & Cookies",
-                "description": """A flag is hidden somewhere in HTTP response headers or cookies!
+            "category": "Forensics",
+            "value": 150,
+            "flag": os.getenv('IMAGE_METADATA_FLAG', 'CTF{default_image}')
+        },
+        {
+            "name": "HTTP Headers & Cookies",
+            "description": """A flag is hidden somewhere in HTTP response headers or cookies!
 
 **Challenge:** Find the flag by inspecting HTTP responses. It could be in headers, cookies, or even the response body.
 
@@ -88,13 +94,16 @@ Open http://localhost:5000 in your browser
 - Some information might be hidden in headers you don't normally see
 - Look for headers starting with "X-"
 - The flag might be split across multiple headers""",
-                "category": "Web",
-                "value": 100,
-                "flag": "CTF{http_h34d3r_s3cr3t}"
-            }
-        ]
-        
-        for challenge_data in challenges:
+            "category": "Web",
+            "value": 100,
+            "flag": os.getenv('HTTP_HEADERS_FLAG', 'CTF{default_http}')
+        }
+    ]
+    
+    app = create_app()
+    
+    with app.app_context():
+        for challenge_data in challenges_data:
             # Check if challenge already exists
             existing = Challenges.query.filter_by(name=challenge_data["name"]).first()
             if existing:

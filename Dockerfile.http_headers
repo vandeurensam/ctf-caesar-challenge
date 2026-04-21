@@ -6,6 +6,8 @@ COPY http_headers_challenge.py .
 
 RUN pip install --no-cache-dir flask
 
+ENV HTTP_HEADERS_FLAG=CTF{http_h34d3r_s3cr3t}
+
 EXPOSE 5000
 
 ENTRYPOINT ["python3", "http_headers_challenge.py"]

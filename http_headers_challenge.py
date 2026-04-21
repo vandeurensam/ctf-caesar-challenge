@@ -10,8 +10,8 @@ import os
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-# The flag hidden in headers
-FLAG = "CTF{http_h34d3r_s3cr3t}"
+# Get flag from environment variable
+FLAG = os.getenv('HTTP_HEADERS_FLAG', 'CTF{default_flag}')
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -224,7 +224,7 @@ def api_cookies():
         "cookies": {
             "session_id": "abc123xyz",
             "user": "player",
-            "flag_part": "CTF{http_h34d3r_s3cr3t}"
+            "flag_part": FLAG
         }
     })
     response.set_cookie('flag_hint', 'check_headers', max_age=3600)

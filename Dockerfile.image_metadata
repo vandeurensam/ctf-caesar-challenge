@@ -8,4 +8,6 @@ COPY image_metadata_challenge.py .
 
 RUN pip install --no-cache-dir Pillow piexif
 
+ENV IMAGE_METADATA_FLAG=CTF{3x1f_m3t4d4t4_5ecr3t}
+
 ENTRYPOINT ["python3", "image_metadata_challenge.py"]

@@ -30,7 +30,7 @@ docker-compose.override.yml
 *.swo
 *~
 
-# Environment
+# Environment - NEVER commit .env with real flags
 .env
 .env.local
 .env.*.local

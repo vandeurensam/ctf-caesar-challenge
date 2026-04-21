@@ -24,6 +24,7 @@ services:
     container_name: caesar-challenge
     stdin_open: true
     tty: true
+    env_file: .env
     networks:
       - ctf_network
 
@@ -34,6 +35,7 @@ services:
     container_name: image-challenge
     stdin_open: true
     tty: true
+    env_file: .env
     networks:
       - ctf_network
 
@@ -44,6 +46,7 @@ services:
     container_name: http-challenge
     ports:
       - "5000:5000"
+    env_file: .env
     networks:
       - ctf_network
 

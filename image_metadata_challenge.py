@@ -9,6 +9,9 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 import piexif
 
+# Get flag from environment variable
+FLAG = os.getenv('IMAGE_METADATA_FLAG', 'CTF{default_flag}')
+
 def create_challenge_image():
     """Create a test image with hidden flag in EXIF metadata"""
     
@@ -20,7 +23,7 @@ def create_challenge_image():
         "0th": {
             piexif.ImageIFD.Make: b"Canon",
             piexif.ImageIFD.Model: b"Canon EOS 5D",
-            piexif.ImageIFD.Software: b"CTF{3x1f_m3t4d4t4_5ecr3t}",  # Flag hidden here!
+            piexif.ImageIFD.Software: FLAG.encode('utf-8'),  # Flag hidden here!
             piexif.ImageIFD.ImageDescription: b"Vacation photo",
         }
     }

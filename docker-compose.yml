@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  ctfd:
+    image: ctfd/ctfd:latest
+    container_name: ctfd
+    ports:
+      - "8000:8000"
+    environment:
+      - WORKERS=1
+    volumes:
+      - ctfd_data:/var/lib/ctfd
+    networks:
+      - ctf_network
+
+  caesar-challenge:
+    build:
+      context: .
+      dockerfile: Dockerfile.caesar
+    container_name: caesar-challenge
+    stdin_open: true
+    tty: true
+    networks:
+      - ctf_network
+
+volumes:
+  ctfd_data:
+
+networks:
+  ctf_network:
+    driver: bridge

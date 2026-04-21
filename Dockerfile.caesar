@@ -1,0 +1,9 @@
+FROM python:3.11-alpine
+
+WORKDIR /app
+
+COPY caesar_challenge.py .
+
+RUN chmod +x caesar_challenge.py
+
+ENTRYPOINT ["python3", "caesar_challenge.py"]

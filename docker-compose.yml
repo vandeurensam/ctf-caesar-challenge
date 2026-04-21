@@ -12,6 +12,10 @@ services:
       - ctfd_data:/var/lib/ctfd
     networks:
       - ctf_network
+    depends_on:
+      - caesar-challenge
+      - image-challenge
+      - http-challenge
 
   caesar-challenge:
     build:
@@ -20,6 +24,26 @@ services:
     container_name: caesar-challenge
     stdin_open: true
     tty: true
+    networks:
+      - ctf_network
+
+  image-challenge:
+    build:
+      context: .
+      dockerfile: Dockerfile.image_metadata
+    container_name: image-challenge
+    stdin_open: true
+    tty: true
+    networks:
+      - ctf_network
+
+  http-challenge:
+    build:
+      context: .
+      dockerfile: Dockerfile.http_headers
+    container_name: http-challenge
+    ports:
+      - "5000:5000"
     networks:
       - ctf_network
 

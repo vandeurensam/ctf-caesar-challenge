@@ -62,7 +62,7 @@ Once decrypted, you will find the flag.
 
 **How to solve:**
 ```bash
-docker run -it caesar-challenge
+docker run -it docker-caesar-challenge
 ```
 
 Try different shift values until the message becomes readable.""",
@@ -84,7 +84,7 @@ Try different shift values until the message becomes readable.""",
 
 **How to solve:**
 ```bash
-docker run -it image-challenge
+docker run -it docker-image-challenge
 ```
 
 Use the tools to inspect the image's metadata. EXIF data is stored inside image files and can contain hidden information.
@@ -154,6 +154,11 @@ Open http://localhost:5000 in your browser
             existing = Challenges.query.filter_by(name=challenge_data["name"]).first()
             if existing:
                 print(f"ℹ️  Challenge '{challenge_data['name']}' already exists")
+                # Ensure flag type is correct
+                flag = Flags.query.filter_by(challenge_id=existing.id).first()
+                if flag and (flag.type is None or flag.type != 'static'):
+                    flag.type = "static"
+                    db.session.commit()
                 continue
             
             # Create challenge
@@ -173,7 +178,7 @@ Open http://localhost:5000 in your browser
             flag = Flags(
                 challenge_id=challenge.id,
                 content=challenge_data["flag"],
-                data="static"
+                type="static"
             )
             
             db.session.add(flag)
@@ -195,12 +200,34 @@ Open http://localhost:5000 in your browser
             print(f"  Hints: {len(challenge_data['hints'])}")
             print()
         
+        # Verify all challenges are visible and flags have correct type
+        print("Verifying scoring setup...")
+        all_challenges = Challenges.query.all()
+        for challenge in all_challenges:
+            if challenge.state != "visible":
+                challenge.state = "visible"
+                db.session.commit()
+            
+            flag = Flags.query.filter_by(challenge_id=challenge.id).first()
+            if flag and (flag.type is None or flag.type != 'static'):
+                flag.type = "static"
+                db.session.commit()
+        
+        print()
         print("=" * 70)
         print("✓ CTFd initialization complete!")
         print("=" * 70)
         print()
-        print("Access CTFd at: http://localhost:8000")
-        print("HTTP Challenge at: http://localhost:5000")
+        print("📍 Access points:")
+        print("   - CTFd Dashboard: http://localhost:8000")
+        print("   - HTTP Challenge: http://localhost:5000")
+        print()
+        print("💡 To earn points:")
+        print("   1. Log in to CTFd")
+        print("   2. Click on a challenge")
+        print("   3. Submit the flag")
+        print("   4. ✓ Points are added to your score!")
+        print("   5. View your rank on the scoreboard")
         print()
 
 if __name__ == "__main__":

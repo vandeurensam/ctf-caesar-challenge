@@ -104,9 +104,454 @@ project-root/
 
 ---
 
-## 4. Development Process
+## 4. Caesar Cipher Challenge - Gedetailleerde Uitleg
 
-### 4.1 Fase 1: Initiele Setup
+### 4.1 Wat is een Caesar Cipher?
+
+Een **Caesar Cipher** is een van de oudste versleutelingsmethoden. Het werkt door elke letter in een bericht met een vaste waarde (shift) verschuiven in het alfabet.
+
+**Voorbeeld:**
+- Bericht: `HELLO`
+- Shift: `3`
+- Versleuteld: `KHOOR`
+
+Dit werkt als volgt:
+- `H` → `K` (3 plaatsen naar rechts)
+- `E` → `H` (3 plaatsen naar rechts)
+- `L` → `O` (3 plaatsen naar rechts)
+- `L` → `O` (3 plaatsen naar rechts)
+- `O` → `R` (3 plaatsen naar rechts)
+
+**Mathematische formule:**
+```
+Versleuteling: E_n(x) = (x + n) mod 26
+Ontsleuteling: D_n(x) = (x - n) mod 26
+```
+
+Waarbij:
+- `x` = positie van de letter (A=0, B=1, ... Z=25)
+- `n` = shift waarde
+- `mod 26` = terugkeren naar begin van alfabet wanneer Z voorbij gaat
+
+---
+
+### 4.2 Stap 1: Begrijpen van het Probleem
+
+**Doel:** Maak een interactieve challenge waarbij:
+1. Het programma een versleuteld bericht toont
+2. De gebruiker een shift-waarde probeert (0-25)
+3. Het bericht wordt ontsleuteld
+4. Als correct: toon de flag
+
+**Prompt naar AI:**
+```
+"can you build a ctf challenge, Caesar cipher for example, 
+as a loose python or text file and write a dockerfile for 
+that challenge, test if it works"
+```
+
+---
+
+### 4.3 Stap 2: De Caesar Decrypt Functie
+
+Dit is het **hart** van de challenge. Deze functie ontsleutelt het bericht.
+
+**Werking stap-voor-stap:**
+
+```python
+def caesar_decrypt(ciphertext, shift):
+    """
+    Input: 
+      - ciphertext: versleuteld bericht (bijv. "Wkh txlfn")
+      - shift: verschuiving (bijv. 3)
+    
+    Output: 
+      - ontsleuteld bericht (bijv. "The quick")
+    """
+    result = []  # Lege list voor resultaat
+    
+    # Ga door elk karakter in het bericht
+    for char in ciphertext:
+        if char.isalpha():  # Is het een letter?
+            if char.isupper():  # Is het HOOFLETTER?
+                # Stap-voor-stap:
+                # 1. ord(char) - ord('A') = positie (0-25)
+                #    Bijvoorbeeld: ord('W') - ord('A') = 22
+                # 2. - shift = verschuif terug
+                #    Bijvoorbeeld: 22 - 3 = 19
+                # 3. % 26 = zorg dat we binnen A-Z blijven
+                #    (als we onder 0 gaan, wrap around naar Z)
+                # 4. + ord('A') = convert terug naar ASCII
+                result.append(chr((ord(char) - ord('A') - shift) % 26 + ord('A')))
+            
+            else:  # Het is een kleine letter
+                # Hetzelfde, maar voor kleine letters
+                result.append(chr((ord(char) - ord('a') - shift) % 26 + ord('a')))
+        
+        else:  # Het is geen letter (spatie, punt, etc)
+            result.append(char)  # Behoud het originele karakter
+    
+    # Join alle karakters samen tot één string
+    return ''.join(result)
+```
+
+**Voorbeeld met shift=3:**
+```
+Encrypted: "Wkh txlfn eurzq ira"
+
+W (ASCII 87): 
+  → (87 - 65 - 3) % 26 + 65 
+  → (22 - 3) % 26 + 65 
+  → 19 % 26 + 65 
+  → T (ASCII 84) ✓
+
+k (ASCII 107):
+  → (107 - 97 - 3) % 26 + 97
+  → (10 - 3) % 26 + 97
+  → 7 % 26 + 97
+  → h (ASCII 104) ✓
+
+Result: "The quick brown"
+```
+
+---
+
+### 4.4 Stap 3: De Hoofdlogica - Het Spel
+
+Dit is wat de gebruiker ziet en waar ze mee interageren:
+
+```python
+def main():
+    print("=" * 50)
+    print("CAESAR CIPHER CHALLENGE")
+    print("=" * 50)
+    print()
+    print("You have intercepted an encrypted message.")
+    print("Find the correct shift value to decrypt it.")
+    print()
+    
+    # Dit is het versleutelde bericht (shift 3)
+    encrypted = "Wkh txlfn eurzq ira mxpsv ryhu wkh odcb grj."
+    
+    print(f"Encrypted message: {encrypted}")
+    print()
+    
+    # Oneindige loop totdat correct antwoord
+    while True:
+        try:
+            # Vraag gebruiker om shift-waarde
+            shift = int(input("Enter shift value (0-25): "))
+            
+            # Controleer of het getal in bereik is
+            if shift < 0 or shift > 25:
+                print("Shift must be between 0 and 25.")
+                continue
+            
+            # Ontsleutel met deze shift
+            decrypted = caesar_decrypt(encrypted, shift)
+            print(f"Decrypted: {decrypted}")
+            
+            # Check of het juist is
+            # We weten dat shift 3 correct is en de boodschap
+            # begint met "The quick brown fox"
+            if shift == 3 and "The quick brown fox" in decrypted:
+                print()
+                print("=" * 50)
+                print("CORRECT!")
+                print(f"FLAG: {FLAG}")  # FLAG uit environment variable
+                print("=" * 50)
+                break  # Stop de loop
+            else:
+                print("Not quite right. Try another shift.")
+                print()
+        
+        except ValueError:
+            # Gebruiker gaf geen getal in
+            print("Please enter a valid number.")
+            print()
+```
+
+**Werking:**
+1. Toon het versleutelde bericht
+2. Vraag om shift-waarde
+3. Ontsleutel ermee
+4. Toon het resultaat
+5. Check of correct
+6. Zo ja → Flag tonen en stoppen
+7. Zo nee → Opnieuw proberen
+
+---
+
+### 4.5 Stap 4: Environment Variables voor Veiligheid
+
+We willen de flag NIET hardcoded in het script! Dit is onveilig.
+
+**VOOR (SLECHT):**
+```python
+FLAG = "CTF{c43s4r_c1ph3r_m4st3r}"  # NOOIT DOEN!
+```
+
+**NA (GOED):**
+```python
+import os
+
+# Lees de flag uit de omgeving
+# Zo kan je deze veranderen zonder code aan te passen
+FLAG = os.getenv('CAESAR_FLAG', 'CTF{default_flag}')
+
+# os.getenv(naam, standaard_waarde)
+# - naam: welke omgevingsvariabele te lezen
+# - standaard_waarde: wat te gebruiken als niet gevonden
+```
+
+**Voordelen:**
+- ✓ Flag staat niet in broncode
+- ✓ Dezelfde code kan verschillende flags gebruiken
+- ✓ Flag kan veranderd worden zonder code te editen
+- ✓ Veiliger voor GitHub (we committen de flag niet!)
+
+---
+
+### 4.6 Stap 5: Docker Container
+
+Nu pakken we alles in een container zodat het overal werkt.
+
+**Dockerfile.caesar:**
+```dockerfile
+# Gebruik Python 3.11 op Alpine Linux
+# Alpine is klein (~50MB) en snel
+FROM python:3.11-alpine
+
+# Zet werkdirectory in container
+WORKDIR /app
+
+# Kopieer het Python script naar container
+COPY caesar_challenge.py .
+
+# Maak het executable
+RUN chmod +x caesar_challenge.py
+
+# Zet de flag als environment variable
+ENV CAESAR_FLAG=CTF{c43s4r_c1ph3r_m4st3r}
+
+# Start het script wanneer container start
+ENTRYPOINT ["python3", "caesar_challenge.py"]
+```
+
+**Wat gebeur hier:**
+1. `FROM` = gebruik Python 3.11 als basis
+2. `WORKDIR` = maak /app map aan (alles hier zetten)
+3. `COPY` = kopieer caesar_challenge.py naar container
+4. `RUN` = voer commando uit
+5. `ENV` = zet omgevingsvariabele
+6. `ENTRYPOINT` = wat te starten (python caesar_challenge.py)
+
+**Builden:**
+```bash
+docker build -f Dockerfile.caesar -t caesar-challenge:latest .
+```
+
+**Runnen:**
+```bash
+docker run -it caesar-challenge:latest
+```
+
+---
+
+### 4.7 Stap 6: Testen
+
+Testen is belangrijk! We moeten zeker weten dat alles werkt.
+
+**Test 1: Manual Testing**
+```bash
+$ docker run -it caesar-challenge:latest
+
+CAESAR CIPHER CHALLENGE
+==================================================
+You have intercepted an encrypted message.
+Find the correct shift value to decrypt it.
+
+Encrypted message: Wkh txlfn eurzq ira mxpsv ryhu wkh odcb grj.
+
+Enter shift value (0-25): 1
+Decrypted: Vjg ukhej dqyp hqz oxorv rucg vjg nzbe hmi.
+Not quite right. Try another shift.
+
+Enter shift value (0-25): 3
+Decrypted: The quick brown fox jumps over the lazy dog.
+==================================================
+CORRECT!
+FLAG: CTF{c43s4r_c1ph3r_m4st3r}
+==================================================
+```
+
+✓ **PASS** - Challenge werkt correct!
+
+**Test 2: Shift Values Verifiëren**
+```
+Shift 0: "Wkh..." (geen verandering)
+Shift 1: "Vjg..." (allemaal één terug)
+Shift 2: "Uif..." (allemaal twee terug)
+Shift 3: "The..." (juist!) ✓
+Shift 4: "Sgd..." (te veel)
+```
+
+---
+
+### 4.8 Stap 7: Toevoegen aan CTFd
+
+Nu moet de challenge bekend zijn in CTFd.
+
+**init_ctfd.py - Het Script:**
+```python
+# Dit script voegt de challenge toe aan de database
+for challenge_data in challenges_data:
+    challenge = Challenges(
+        name="Caesar Cipher",
+        description="""You have intercepted an encrypted message:
+        
+**Encrypted:** Wkh txlfn eurzq ira mxpsv ryhu wkh odcb grj.
+
+Your task is to find the correct Caesar cipher shift value (0-25).""",
+        category="Cryptography",
+        value=100,  # 100 punten
+        state="visible"
+    )
+    
+    db.session.add(challenge)
+    db.session.commit()
+    
+    # Voeg flag toe
+    flag = Flags(
+        challenge_id=challenge.id,
+        content="CTF{c43s4r_c1ph3r_m4st3r}",
+        type="static"
+    )
+    
+    db.session.add(flag)
+    db.session.commit()
+    
+    # Voeg hints toe
+    hints = [
+        {"content": "A Caesar cipher shifts each letter...", "cost": 10},
+        {"content": "Try shift values starting from 1...", "cost": 20},
+        {"content": "The first word starts with 'T'...", "cost": 30},
+        {"content": "The correct shift is 3.", "cost": 50}
+    ]
+    
+    for hint in hints:
+        h = Hints(
+            challenge_id=challenge.id,
+            content=hint["content"],
+            cost=hint["cost"]
+        )
+        db.session.add(h)
+    
+    db.session.commit()
+```
+
+---
+
+### 4.9 Stap 8: Integratie in Docker Compose
+
+Nu moeten alle containers samen werken.
+
+**docker-compose.yml:**
+```yaml
+version: '3.8'
+
+services:
+  caesar-challenge:
+    build:
+      context: .
+      dockerfile: Dockerfile.caesar
+    container_name: caesar-challenge
+    stdin_open: true
+    tty: true
+    env_file: .env  # Laad vlaggen van .env
+    networks:
+      - ctf_network  # Gebruik shared network
+
+networks:
+  ctf_network:
+    driver: bridge
+```
+
+**env_file: .env** = Docker laadt alle variabelen uit .env file!
+
+---
+
+### 4.10 Stap 9: Het Volledige Proces
+
+```
+┌─────────────────────────────────────────┐
+│ 1. Gebruiker start: docker run -it      │
+│    caesar-challenge:latest              │
+└─────────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────────┐
+│ 2. Docker laadt container image         │
+│    - Python 3.11 basis                  │
+│    - caesar_challenge.py script         │
+│    - CAESAR_FLAG environment variable   │
+└─────────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────────┐
+│ 3. main() functie wordt gestarte        │
+│    - Toont versleuteld bericht          │
+│    - Vraagt om shift-waarde             │
+└─────────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────────┐
+│ 4. Gebruiker voert 3 in                 │
+└─────────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────────┐
+│ 5. caesar_decrypt() wordt aangeroepen   │
+│    - Ontsleutelt met shift 3            │
+│    - Geeft "The quick brown..." terug   │
+└─────────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────────┐
+│ 6. Check: "The quick brown fox"?        │
+│    JA! → Flag tonen                     │
+└─────────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────────┐
+│ 7. CTFd: Flag submitten                 │
+│    - Gebruiker kopieert flag            │
+│    - Gaat naar CTFd website             │
+│    - Submitten voor 100 punten!         │
+└─────────────────────────────────────────┘
+```
+
+---
+
+### 4.11 Samenvatting: Caesar Cipher Maken
+
+**Samenvattend:**
+
+1. **Concept:** Maak een versleutelingsuitdaging
+2. **Functie:** Schreef caesar_decrypt() functie
+3. **Spel:** Bouwde interactieve main() loop
+4. **Veiligheid:** Gebruikte environment variables
+5. **Container:** Schreef Dockerfile
+6. **Testen:** Testte handmatig
+7. **Integratie:** Voegde toe aan CTFd
+8. **Docker:** Zette in docker-compose.yml
+
+**Eindresultaat:**
+- ✓ Werkende Caesar Cipher challenge
+- ✓ 100 punten als correct
+- ✓ 4 hints beschikbaar
+- ✓ Veilig in Docker container
+- ✓ Vlaggen als environment variables
+
+---
+
+## 5. Development Process
+
+### 5.1 Fase 1: Initiele Setup
 
 **Wat ik deed:**
 - Onderzoek naar CTF platforms en Docker
@@ -123,7 +568,7 @@ Ik gebruikte AI (Gordon - Docker assistant) met volgende prompts:
 2. *"can you build a ctf challenge, Ceaser cipher for example, as a loose python or text file and write a dockerfile for that challenge, test if it works and add the challenge to ctfd"*
    - Resultaat: Volledig werkende Caesar Cipher challenge met Dockerfile
 
-### 4.2 Fase 2: Challenge Development
+### 5.2 Fase 2: Challenge Development
 
 **Wat ik deed:**
 - Analyseerde requirements voor elke challenge type
@@ -139,44 +584,12 @@ Ik gebruikte AI (Gordon - Docker assistant) met volgende prompts:
 - **Doelstelling:** Gebruiker moet shift-waarde van 3 raden
 - **Flag:** `CTF{c43s4r_c1ph3r_m4st3r}`
 
-**Code Fragment:**
-```python
-# Gebruiker geeft shift-waarde in
-shift = int(input("Enter shift value (0-25): "))
-
-# Decrypt bericht
-decrypted = caesar_decrypt(encrypted, shift)
-
-# Check of correct
-if shift == 3 and "The quick brown fox" in decrypted:
-    print(f"FLAG: {FLAG}")  # Flag uit environment variable
-```
-
-**Prompts:**
-
-Ik vroeg AI: *"hoe complete ik de eerste challenge ookalweer"*
-- Resultaat: Gedetailleerde stap-voor-stap instructies
-
 #### Challenge 2: Image Metadata (Forensics)
 - **Type:** EXIF data extraction
 - **Moeilijkheid:** Easy-Medium
 - **Punten:** 150
 - **Doelstelling:** Extract flag uit image metadata
 - **Flag:** `CTF{3x1f_m3t4d4t4_5ecr3t}`
-
-**Key Code:**
-```python
-# Create image met hidden flag in EXIF
-exif_dict = {
-    "0th": {
-        piexif.ImageIFD.Software: FLAG.encode('utf-8'),
-    }
-}
-
-# User voert 'help' in
-if user_input == 'help':
-    read_metadata_from_file()  # Toont alle EXIF data
-```
 
 #### Challenge 3: HTTP Headers & Cookies (Web Security)
 - **Type:** Flask web app
@@ -185,18 +598,7 @@ if user_input == 'help':
 - **Doelstelling:** Vind flag in HTTP headers/cookies
 - **Flag:** `CTF{http_h34d3r_s3cr3t}`
 
-**Key Code:**
-```python
-@app.route('/api/headers')
-def api_headers():
-    response = jsonify({"message": "Check the headers!"})
-    response.headers['X-Flag-Part-1'] = 'CTF{'
-    response.headers['X-Flag-Part-2'] = 'http_'
-    # ... flag verdeeld over headers
-    return response
-```
-
-### 4.3 Fase 3: Security & Best Practices
+### 5.3 Fase 3: Security & Best Practices
 
 **Wat ik deed:**
 - Verplaatste alle vlaggen uit code naar environment variables
@@ -210,17 +612,7 @@ Resultaat:
 - ✓ Environment variables via `.env` file
 - ✓ `.env` beschermd tegen git commits
 
-**Code Example:**
-```python
-# VOOR (slecht):
-FLAG = "CTF{secret}"  # In code! NOOIT DOEN!
-
-# NA (goed):
-import os
-FLAG = os.getenv('CAESAR_FLAG', 'default')  # Uit environment
-```
-
-### 4.4 Fase 4: Hints & Punten System
+### 5.4 Fase 4: Hints & Punten System
 
 **Wat ik deed:**
 - Voegde 4 hints toe per challenge
@@ -235,20 +627,7 @@ FLAG = os.getenv('CAESAR_FLAG', 'default')  # Uit environment
 2. *"kan je ervoor zorgen dat je dan daadwerkelijk de punten krijgt en aan het scoreboard toevoegd?"*
    - Resultaat: `setup_scoring.py` en `fix_flag_types.py`
 
-**Hint System:**
-```python
-hints_data = {
-    "Caesar Cipher": [
-        {
-            "content": "A Caesar cipher shifts each letter...",
-            "cost": 10  # Punten af voor hint
-        },
-        # ... meer hints
-    ]
-}
-```
-
-### 4.5 Fase 5: Docker Compose & Automation
+### 5.5 Fase 5: Docker Compose & Automation
 
 **Wat ik deed:**
 - Schreef `docker-compose.yml` voor alle containers
@@ -259,24 +638,7 @@ hints_data = {
 
 Resultaat: `docker compose up --build` start alles!
 
-**docker-compose.yml Highlights:**
-```yaml
-services:
-  ctfd:
-    image: ctfd/ctfd:latest
-    env_file: .env  # Laadt vlaggen
-    depends_on:
-      - caesar-challenge
-      - image-challenge
-      - http-challenge
-
-  caesar-challenge:
-    build:
-      dockerfile: Dockerfile.caesar
-    env_file: .env  # Vlaggen beschikbaar
-```
-
-### 4.6 Fase 6: GitHub & Versiecontrol
+### 5.6 Fase 6: GitHub & Versiecontrol
 
 **Wat ik deed:**
 - Initialiseerde Git repo
@@ -295,82 +657,6 @@ services:
 
 ---
 
-## 5. Implementatie Details
-
-### 5.1 Environment Variables & Security
-
-**Probleem:** Vlaggen moeten secret blijven maar toegankelijk voor containers
-
-**Oplossing:**
-1. Maak `.env` file met vlaggen
-2. `.env` in `.gitignore` (kan niet per ongeluk gecommit worden)
-3. Share `.env.example` zonder echte vlaggen
-4. Docker Compose laadt `.env` automatisch
-
-**Bestand: .env**
-```env
-CAESAR_FLAG=CTF{c43s4r_c1ph3r_m4st3r}
-IMAGE_METADATA_FLAG=CTF{3x1f_m3t4d4t4_5ecr3t}
-HTTP_HEADERS_FLAG=CTF{http_h34d3r_s3cr3t}
-```
-
-**Bestand: .env.example** (Safe to share)
-```env
-# CTF Flags - Copy to .env and set your own flags
-CAESAR_FLAG=CTF{your_caesar_flag}
-IMAGE_METADATA_FLAG=CTF{your_image_flag}
-HTTP_HEADERS_FLAG=CTF{your_http_flag}
-```
-
-### 5.2 Multi-Container Orchestration
-
-**Probleem:** 4 services die moeten communiceren, dezelfde network nodig
-
-**Oplossing:** Docker Compose network
-```yaml
-networks:
-  ctf_network:
-    driver: bridge
-
-services:
-  ctfd:
-    networks:
-      - ctf_network
-  caesar-challenge:
-    networks:
-      - ctf_network
-  # ... etc
-```
-
-### 5.3 Initialization & Scripting
-
-**Probleem:** CTFd container moet weten over challenges en hints
-
-**Oplossing:** `init_ctfd.py` script
-
-```python
-# Wacht tot database klaar is
-def wait_for_db(max_retries=30):
-    for attempt in range(max_retries):
-        try:
-            db.engine.execute("SELECT 1")
-            return app
-        except:
-            time.sleep(1)
-
-# Voeg challenges toe
-for challenge_data in challenges_data:
-    challenge = Challenges(
-        name=challenge_data["name"],
-        value=challenge_data["value"],
-        # ...
-    )
-    db.session.add(challenge)
-    db.session.commit()
-```
-
----
-
 ## 6. Challenges Geleerd
 
 ### 6.1 Probleem: Flag Types Incorrect
@@ -383,7 +669,6 @@ for challenge_data in challenges_data:
 - Flag type was `None` of `"data"` i.p.v. `"static"`
 
 **Oplossing:**
-Maakte `fix_flag_types.py`:
 ```python
 for flag in Flags.query.all():
     if flag.type != 'static':
@@ -411,7 +696,7 @@ docker compose up --build  # Start fresh
 ```yaml
 # docker-compose.yml
 services:
-  ctfd:
+  caesar-challenge:
     env_file: .env  # Laad .env file
 ```
 
@@ -434,32 +719,12 @@ services:
 
 **Caesar Challenge Test:**
 ```bash
-$ echo "3" | docker run -it docker-caesar-challenge
+$ docker run -it docker-caesar-challenge
 Encrypted message: Wkh txlfn eurzq ira mxpsv ryhu wkh odcb grj.
 Enter shift value (0-25): 3
 Decrypted: The quick brown fox jumps over the lazy dog.
 CORRECT!
 FLAG: CTF{c43s4r_c1ph3r_m4st3r}
-```
-
-**Result:** ✓ PASS
-
-**Image Challenge Test:**
-```bash
-$ docker run -it docker-image-challenge
-> help
-EXIF Data Found:
-  Software: CTF{3x1f_m3t4d4t4_5ecr3t}
-```
-
-**Result:** ✓ PASS
-
-**HTTP Challenge Test:**
-```bash
-$ curl http://localhost:5000/api/inspect
-{
-  "flag": "CTF{http_h34d3r_s3cr3t}"
-}
 ```
 
 **Result:** ✓ PASS
@@ -485,8 +750,6 @@ $ docker compose up --build
 1. Log in op http://localhost:8000
 2. Submit: `CTF{c43s4r_c1ph3r_m4st3r}`
 3. Check scoreboard → 100 points added
-4. Submit: `CTF{3x1f_m3t4d4t4_5ecr3t}`
-5. Check scoreboard → 150 points added (total: 250)
 
 **Result:** ✓ PASS
 
@@ -569,17 +832,19 @@ Dit project werd **met AI (Gordon - Docker Assistant)** gerealiseerd. Dit is **t
 1. ✓ Docker container fundamentals
 2. ✓ Docker Compose multi-service orchestration
 3. ✓ Python application development
-4. ✓ Web security (OWASP, headers, cookies)
-5. ✓ Git & GitHub workflow
-6. ✓ Environment variable security
-7. ✓ Database interaction (SQLite via CTFd)
-8. ✓ Project organization & documentation
+4. ✓ Cryptografie (Caesar Cipher algoritme)
+5. ✓ Web security (OWASP, headers, cookies)
+6. ✓ Git & GitHub workflow
+7. ✓ Environment variable security
+8. ✓ Database interaction (SQLite via CTFd)
+9. ✓ Project organization & documentation
 
 **Ondanks AI gebruik:**
 - Ik begrijp elke regel code
 - Ik kan challenges aanpassen/uitbreiden
 - Ik kan problemen debuggen
 - Ik weet hoe Docker werkt
+- Ik snap hoe Caesar Cipher algoritme werkt
 
 ---
 
@@ -664,6 +929,7 @@ Dit project toont succesvol:
 ✓ **Docker Mastery:** Containers, images, networks, volumes, docker-compose
 ✓ **Security:** Environment variables, .gitignore, best practices
 ✓ **Software Development:** Python, Flask, multi-tier architecture
+✓ **Cryptografie:** Begrijpen van Caesar Cipher algoritme
 ✓ **Web Security:** Understanding van HTTP, headers, cookies, EXIF
 ✓ **Project Management:** Planning, testing, documentation, version control
 ✓ **AI Collaboration:** Efficiënt gebruik van AI tools met eigen expertise
@@ -688,8 +954,15 @@ Dit project toont succesvol:
 
 ## Appendix B: Bronnen & Documentatie
 
+**Caesar Cipher Tutorials:**
+- [GeeksforGeeks - Caesar Cipher](https://www.geeksforgeeks.org/caesar-cipher-in-cryptography/)
+- [Wikipedia - Caesar Cipher](https://en.wikipedia.org/wiki/Caesar_cipher)
+
+**Docker Documentation:**
 - [Docker Official Documentation](https://docs.docker.com)
 - [Docker Compose Reference](https://docs.docker.com/compose/reference/)
+
+**Project Resources:**
 - [CTFd GitHub](https://github.com/ctfdu/ctfd)
 - [OWASP Security Top 10](https://owasp.org/www-project-top-ten/)
 - [Python Best Practices](https://pep8.org/)
@@ -702,13 +975,20 @@ Dit project toont succesvol:
 1. "i want to download CTFd via Docker"
 2. "can you build a ctf challenge, Caesar cipher for example"
 3. "kan je een github repository aanmaken en alle bestanden pushen"
-4. "kan je nog 2 challenges toevoegen?: 1 vlag in metadata van een afbeelding (Exiftool) 
-   en 1 verstop een vlag in een http header of cookie via flask"
+4. "kan je nog 2 challenges toevoegen?: 1 vlag in metadata van 
+   een afbeelding (Exiftool) en 1 verstop een vlag in een http 
+   header of cookie via flask"
 5. "sla alle vlaggen op als docker envirement variable nooit als code"
 6. "heb je bij alle challenges al punten en hints erbij staan?"
-7. "zorg dat alle containers starten via 1 commando: docker compose --build"
-8. "kan je ervoor zorgen dat je dan daadwerkelijk de punten krijgt en aan het scoreboard toevoegd?"
-9. "kan je een realisatie bestand maken voor alles wat we tot nu toe hebben gedaan?"
+7. "zorg dat alle containers starten via 1 commando: 
+   docker compose --build"
+8. "kan je ervoor zorgen dat je dan daadwerkelijk de punten krijgt 
+   en aan het scoreboard toevoegd?"
+9. "kan je een realisatie bestand maken voor alles wat we tot nu 
+   toe hebben gedaan?"
+10. "kan je het realisatie document aanpassen, waarin je compleet stap 
+    voor stap uitlegt hoe de caeser cypher is gemaakt, zo simpel 
+    en uitgebreid mogelijk"
 ```
 
 ---
